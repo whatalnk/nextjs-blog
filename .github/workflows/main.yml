@@ -12,6 +12,7 @@ on:
 jobs:
   # This workflow contains a single job called "build"
   build:
+    name: Build
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
@@ -26,14 +27,31 @@ jobs:
           node-version: '14.x'
       - run: npm install
 
-      # Install firebase cli
-      - name: Install firebase cli
-        run: curl -sL https://firebase.tools | bash
-
       # Build and export
       - name: Build
         run: npm build
-
+      # Archive
+      - name: Archive Production Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: docs
+          path: docs
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    steps: 
+      - uses: actions/checkout@v2
+      # Restore
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: docs
+          path: docs
       # Deploy
-      - name: Deploy
-        run: firebase deploy
+      - name: Deploy to Firebase
+        uses: w9jds/firebase-action@master
+        with:
+          args: deploy --only hosting
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
